@@ -2,17 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Color Perception Filter Tool</title>
+  <title>Color Vision Simulator</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
       background: #f4f4f4;
       padding: 20px;
-    }
-
-    h1 {
-      margin-bottom: 10px;
     }
 
     .container {
@@ -30,92 +26,90 @@
       border-radius: 10px;
     }
 
-    .controls {
-      margin-top: 20px;
-      text-align: left;
-    }
-
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-
-    input[type="range"] {
-      width: 100%;
+    select {
+      margin-top: 15px;
+      padding: 8px;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>Color Filter Perception Tool</h1>
-  <p>Upload an image and explore how color filters change perception.</p>
+  <h1>Color Vision Simulator</h1>
+  <p>Explore how different types of color vision deficiency affect perception.</p>
 
-  <input type="file" id="upload" accept="image/*">
+  <input type="file" id="upload" accept="image/*"><br>
 
-  <img id="image" src="" alt="Your image will appear here">
+  <select id="filterSelect">
+    <option value="normal">Normal Vision</option>
+    <option value="protanopia">Protanopia</option>
+    <option value="deuteranopia">Deuteranopia</option>
+    <option value="tritanopia">Tritanopia</option>
+    <option value="mono">Monochromatism</option>
+  </select>
 
-  <div class="controls">
-    <label>Grayscale: <span id="gVal">0</span>%</label>
-    <input type="range" id="grayscale" min="0" max="100" value="0">
-
-    <label>Sepia: <span id="sVal">0</span>%</label>
-    <input type="range" id="sepia" min="0" max="100" value="0">
-
-    <label>Invert: <span id="iVal">0</span>%</label>
-    <input type="range" id="invert" min="0" max="100" value="0">
-
-    <label>Brightness: <span id="bVal">100</span>%</label>
-    <input type="range" id="brightness" min="0" max="200" value="100">
-
-    <label>Hue Rotate: <span id="hVal">0</span>°</label>
-    <input type="range" id="hue" min="0" max="360" value="0">
-  </div>
+  <img id="image" src="" alt="Upload an image">
 </div>
 
+<!-- SVG Filters -->
+<svg width="0" height="0">
+  <filter id="protanopia">
+    <feColorMatrix type="matrix" values="
+      0.567 0.433 0     0 0
+      0.558 0.442 0     0 0
+      0     0.242 0.758 0 0
+      0     0     0     1 0"/>
+  </filter>
+
+  <filter id="deuteranopia">
+    <feColorMatrix type="matrix" values="
+      0.625 0.375 0     0 0
+      0.7   0.3   0     0 0
+      0     0.3   0.7   0 0
+      0     0     0     1 0"/>
+  </filter>
+
+  <filter id="tritanopia">
+    <feColorMatrix type="matrix" values="
+      0.95 0.05  0     0 0
+      0     0.433 0.567 0 0
+      0     0.475 0.525 0 0
+      0     0     0     1 0"/>
+  </filter>
+
+  <filter id="mono">
+    <feColorMatrix type="matrix" values="
+      0.33 0.33 0.33 0 0
+      0.33 0.33 0.33 0 0
+      0.33 0.33 0.33 0 0
+      0    0    0    1 0"/>
+  </filter>
+</svg>
+
 <script>
-  const img = document.getElementById("image");
   const upload = document.getElementById("upload");
+  const image = document.getElementById("image");
+  const filterSelect = document.getElementById("filterSelect");
 
-  const grayscale = document.getElementById("grayscale");
-  const sepia = document.getElementById("sepia");
-  const invert = document.getElementById("invert");
-  const brightness = document.getElementById("brightness");
-  const hue = document.getElementById("hue");
-
-  const gVal = document.getElementById("gVal");
-  const sVal = document.getElementById("sVal");
-  const iVal = document.getElementById("iVal");
-  const bVal = document.getElementById("bVal");
-  const hVal = document.getElementById("hVal");
-
-  upload.addEventListener("change", function() {
+  upload.addEventListener("change", function () {
     const file = this.files[0];
     if (file) {
-      img.src = URL.createObjectURL(file);
+      image.src = URL.createObjectURL(file);
     }
   });
 
-  function updateFilters() {
-    const filter = `
-      grayscale(${grayscale.value}%)
-      sepia(${sepia.value}%)
-      invert(${invert.value}%)
-      brightness(${brightness.value}%)
-      hue-rotate(${hue.value}deg)
-    `;
-    img.style.filter = filter;
+  filterSelect.addEventListener("change", applyFilter);
 
-    gVal.textContent = grayscale.value;
-    sVal.textContent = sepia.value;
-    iVal.textContent = invert.value;
-    bVal.textContent = brightness.value;
-    hVal.textContent = hue.value;
+  function applyFilter() {
+    const value = filterSelect.value;
+
+    if (value === "normal") {
+      image.style.filter = "none";
+    } else {
+      image.style.filter = `url(#${value})`;
+    }
   }
-
-  document.querySelectorAll("input[type=range]").forEach(slider => {
-    slider.addEventListener("input", updateFilters);
-  });
 </script>
 
 </body>
