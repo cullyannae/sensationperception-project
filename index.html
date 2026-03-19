@@ -20,10 +20,26 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
+    .image-wrapper {
+      position: relative;
+      display: inline-block;
+      margin-top: 20px;
+    }
+
     img {
       max-width: 100%;
-      margin-top: 20px;
       border-radius: 10px;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      pointer-events: none;
+      opacity: 0;
     }
 
     select, input[type="range"] {
@@ -38,7 +54,7 @@
 
 <div class="container">
   <h1>Color Vision Simulator</h1>
-  <p>Adjust intensity to explore different levels of color vision deficiency.</p>
+  <p>Adjust intensity to simulate different color vision types.</p>
 
   <input type="file" id="upload" accept="image/*"><br>
 
@@ -50,17 +66,21 @@
     <option value="mono">Monochromatism</option>
   </select>
 
-  <label>Intensity: <span id="intensityVal">100</span>%</label>
-  <input type="range" id="intensity" min="0" max="100" value="100">
+  <label>Intensity: <span id="intensityVal">0</span>%</label>
+  <input type="range" id="intensity" min="0" max="100" value="0">
 
-  <img id="image" src="" alt="Upload an image">
+  <div class="image-wrapper">
+    <img id="image" src="">
+    <div id="overlay" class="overlay"></div>
+  </div>
 </div>
 
 <script>
   const upload = document.getElementById("upload");
   const image = document.getElementById("image");
+  const overlay = document.getElementById("overlay");
   const filterSelect = document.getElementById("filterSelect");
-  const intensitySlider = document.getElementById("intensity");
+  const intensity = document.getElementById("intensity");
   const intensityVal = document.getElementById("intensityVal");
 
   upload.addEventListener("change", function () {
@@ -70,64 +90,40 @@
     }
   });
 
-  filterSelect.addEventListener("change", applyFilter);
-  intensitySlider.addEventListener("input", applyFilter);
+  filterSelect.addEventListener("change", updateFilter);
+  intensity.addEventListener("input", updateFilter);
 
-  function applyFilter() {
+  function updateFilter() {
     const type = filterSelect.value;
-    const t = intensitySlider.value / 100;
-    intensityVal.textContent = intensitySlider.value;
+    const value = intensity.value;
+    intensityVal.textContent = value;
 
-    let matrix;
+    overlay.style.opacity = value / 100;
 
     if (type === "normal") {
+      overlay.style.background = "transparent";
       image.style.filter = "none";
-      return;
     }
 
     if (type === "protanopia") {
-      matrix = [
-        1 - 0.433*t, 0.433*t, 0, 0, 0,
-        0.558*t, 1 - 0.558*t, 0, 0, 0,
-        0, 0.242*t, 1 - 0.242*t, 0, 0,
-        0, 0, 0, 1, 0
-      ];
+      overlay.style.background = "rgba(0,255,0,0.5)";
+      image.style.filter = "contrast(0.8) saturate(0.6)";
     }
 
     if (type === "deuteranopia") {
-      matrix = [
-        1 - 0.375*t, 0.375*t, 0, 0, 0,
-        0.7*t, 1 - 0.7*t, 0, 0, 0,
-        0, 0.3*t, 1 - 0.3*t, 0, 0,
-        0, 0, 0, 1, 0
-      ];
+      overlay.style.background = "rgba(255,0,0,0.4)";
+      image.style.filter = "contrast(0.85) saturate(0.7)";
     }
 
     if (type === "tritanopia") {
-      matrix = [
-        1 - 0.05*t, 0.05*t, 0, 0, 0,
-        0, 1 - 0.567*t, 0.567*t, 0, 0,
-        0, 0.475*t, 1 - 0.475*t, 0, 0,
-        0, 0, 0, 1, 0
-      ];
+      overlay.style.background = "rgba(255,100,100,0.4)";
+      image.style.filter = "contrast(0.9) saturate(0.6)";
     }
 
     if (type === "mono") {
-      matrix = [
-        1 - 0.67*t, 0.33*t, 0.33*t, 0, 0,
-        0.33*t, 1 - 0.67*t, 0.33*t, 0, 0,
-        0.33*t, 0.33*t, 1 - 0.67*t, 0, 0,
-        0, 0, 0, 1, 0
-      ];
+      overlay.style.background = "transparent";
+      image.style.filter = `grayscale(${value}%)`;
     }
-
-    const matrixString = matrix.join(" ");
-    image.style.filter = `url('data:image/svg+xml;utf8,\
-<svg xmlns="http://www.w3.org/2000/svg">\
-<filter id="f">\
-<feColorMatrix type="matrix" values="${matrixString}"/>\
-</filter>\
-</svg>#f')`;
   }
 </script>
 
