@@ -26,10 +26,11 @@
       border-radius: 10px;
     }
 
-    select {
+    select, input[type="range"] {
       margin-top: 15px;
       padding: 8px;
       font-size: 16px;
+      width: 80%;
     }
   </style>
 </head>
@@ -37,7 +38,7 @@
 
 <div class="container">
   <h1>Color Vision Simulator</h1>
-  <p>Explore how different types of color vision deficiency affect perception.</p>
+  <p>Adjust intensity to explore different levels of color vision deficiency.</p>
 
   <input type="file" id="upload" accept="image/*"><br>
 
@@ -49,48 +50,18 @@
     <option value="mono">Monochromatism</option>
   </select>
 
+  <label>Intensity: <span id="intensityVal">100</span>%</label>
+  <input type="range" id="intensity" min="0" max="100" value="100">
+
   <img id="image" src="" alt="Upload an image">
 </div>
-
-<!-- SVG Filters -->
-<svg width="0" height="0">
-  <filter id="protanopia">
-    <feColorMatrix type="matrix" values="
-      0.567 0.433 0     0 0
-      0.558 0.442 0     0 0
-      0     0.242 0.758 0 0
-      0     0     0     1 0"/>
-  </filter>
-
-  <filter id="deuteranopia">
-    <feColorMatrix type="matrix" values="
-      0.625 0.375 0     0 0
-      0.7   0.3   0     0 0
-      0     0.3   0.7   0 0
-      0     0     0     1 0"/>
-  </filter>
-
-  <filter id="tritanopia">
-    <feColorMatrix type="matrix" values="
-      0.95 0.05  0     0 0
-      0     0.433 0.567 0 0
-      0     0.475 0.525 0 0
-      0     0     0     1 0"/>
-  </filter>
-
-  <filter id="mono">
-    <feColorMatrix type="matrix" values="
-      0.33 0.33 0.33 0 0
-      0.33 0.33 0.33 0 0
-      0.33 0.33 0.33 0 0
-      0    0    0    1 0"/>
-  </filter>
-</svg>
 
 <script>
   const upload = document.getElementById("upload");
   const image = document.getElementById("image");
   const filterSelect = document.getElementById("filterSelect");
+  const intensitySlider = document.getElementById("intensity");
+  const intensityVal = document.getElementById("intensityVal");
 
   upload.addEventListener("change", function () {
     const file = this.files[0];
@@ -100,15 +71,63 @@
   });
 
   filterSelect.addEventListener("change", applyFilter);
+  intensitySlider.addEventListener("input", applyFilter);
 
   function applyFilter() {
-    const value = filterSelect.value;
+    const type = filterSelect.value;
+    const t = intensitySlider.value / 100;
+    intensityVal.textContent = intensitySlider.value;
 
-    if (value === "normal") {
+    let matrix;
+
+    if (type === "normal") {
       image.style.filter = "none";
-    } else {
-      image.style.filter = `url(#${value})`;
+      return;
     }
+
+    if (type === "protanopia") {
+      matrix = [
+        1 - 0.433*t, 0.433*t, 0, 0, 0,
+        0.558*t, 1 - 0.558*t, 0, 0, 0,
+        0, 0.242*t, 1 - 0.242*t, 0, 0,
+        0, 0, 0, 1, 0
+      ];
+    }
+
+    if (type === "deuteranopia") {
+      matrix = [
+        1 - 0.375*t, 0.375*t, 0, 0, 0,
+        0.7*t, 1 - 0.7*t, 0, 0, 0,
+        0, 0.3*t, 1 - 0.3*t, 0, 0,
+        0, 0, 0, 1, 0
+      ];
+    }
+
+    if (type === "tritanopia") {
+      matrix = [
+        1 - 0.05*t, 0.05*t, 0, 0, 0,
+        0, 1 - 0.567*t, 0.567*t, 0, 0,
+        0, 0.475*t, 1 - 0.475*t, 0, 0,
+        0, 0, 0, 1, 0
+      ];
+    }
+
+    if (type === "mono") {
+      matrix = [
+        1 - 0.67*t, 0.33*t, 0.33*t, 0, 0,
+        0.33*t, 1 - 0.67*t, 0.33*t, 0, 0,
+        0.33*t, 0.33*t, 1 - 0.67*t, 0, 0,
+        0, 0, 0, 1, 0
+      ];
+    }
+
+    const matrixString = matrix.join(" ");
+    image.style.filter = `url('data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg">\
+<filter id="f">\
+<feColorMatrix type="matrix" values="${matrixString}"/>\
+</filter>\
+</svg>#f')`;
   }
 </script>
 
