@@ -29,16 +29,13 @@
     img {
       max-width: 100%;
       border-radius: 10px;
+      display: block;
     }
 
-    .overlay {
+    .filtered {
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
-      border-radius: 10px;
-      pointer-events: none;
       opacity: 0;
     }
 
@@ -54,7 +51,7 @@
 
 <div class="container">
   <h1>Color Vision Simulator</h1>
-  <p>Adjust intensity to simulate different color vision types.</p>
+  <p>Adjust intensity to explore different levels of color vision deficiency.</p>
 
   <input type="file" id="upload" accept="image/*"><br>
 
@@ -70,15 +67,52 @@
   <input type="range" id="intensity" min="0" max="100" value="0">
 
   <div class="image-wrapper">
-    <img id="image" src="">
-    <div id="overlay" class="overlay"></div>
+    <!-- Original -->
+    <img id="original" src="">
+    <!-- Filtered overlay -->
+    <img id="filtered" class="filtered" src="">
   </div>
 </div>
 
+<!-- SVG Filters (UNCHANGED) -->
+<svg width="0" height="0">
+  <filter id="protanopia">
+    <feColorMatrix type="matrix" values="
+      0.567 0.433 0     0 0
+      0.558 0.442 0     0 0
+      0     0.242 0.758 0 0
+      0     0     0     1 0"/>
+  </filter>
+
+  <filter id="deuteranopia">
+    <feColorMatrix type="matrix" values="
+      0.625 0.375 0     0 0
+      0.7   0.3   0     0 0
+      0     0.3   0.7   0 0
+      0     0     0     1 0"/>
+  </filter>
+
+  <filter id="tritanopia">
+    <feColorMatrix type="matrix" values="
+      0.95 0.05  0     0 0
+      0     0.433 0.567 0 0
+      0     0.475 0.525 0 0
+      0     0     0     1 0"/>
+  </filter>
+
+  <filter id="mono">
+    <feColorMatrix type="matrix" values="
+      0.33 0.33 0.33 0 0
+      0.33 0.33 0.33 0 0
+      0.33 0.33 0.33 0 0
+      0    0    0    1 0"/>
+  </filter>
+</svg>
+
 <script>
   const upload = document.getElementById("upload");
-  const image = document.getElementById("image");
-  const overlay = document.getElementById("overlay");
+  const original = document.getElementById("original");
+  const filtered = document.getElementById("filtered");
   const filterSelect = document.getElementById("filterSelect");
   const intensity = document.getElementById("intensity");
   const intensityVal = document.getElementById("intensityVal");
@@ -86,43 +120,27 @@
   upload.addEventListener("change", function () {
     const file = this.files[0];
     if (file) {
-      image.src = URL.createObjectURL(file);
+      const url = URL.createObjectURL(file);
+      original.src = url;
+      filtered.src = url;
     }
   });
 
-  filterSelect.addEventListener("change", updateFilter);
-  intensity.addEventListener("input", updateFilter);
+  filterSelect.addEventListener("change", update);
+  intensity.addEventListener("input", update);
 
-  function updateFilter() {
+  function update() {
     const type = filterSelect.value;
     const value = intensity.value;
+
     intensityVal.textContent = value;
 
-    overlay.style.opacity = value / 100;
-
     if (type === "normal") {
-      overlay.style.background = "transparent";
-      image.style.filter = "none";
-    }
-
-    if (type === "protanopia") {
-      overlay.style.background = "rgba(0,255,0,0.5)";
-      image.style.filter = "contrast(0.8) saturate(0.6)";
-    }
-
-    if (type === "deuteranopia") {
-      overlay.style.background = "rgba(255,0,0,0.4)";
-      image.style.filter = "contrast(0.85) saturate(0.7)";
-    }
-
-    if (type === "tritanopia") {
-      overlay.style.background = "rgba(255,100,100,0.4)";
-      image.style.filter = "contrast(0.9) saturate(0.6)";
-    }
-
-    if (type === "mono") {
-      overlay.style.background = "transparent";
-      image.style.filter = `grayscale(${value}%)`;
+      filtered.style.filter = "none";
+      filtered.style.opacity = 0;
+    } else {
+      filtered.style.filter = `url(#${type})`;
+      filtered.style.opacity = value / 100;
     }
   }
 </script>
